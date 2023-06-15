@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "es2020",
+    "target": "es2017",
+    "strict": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "allowJs": true,
+    "checkJs": true,
+    "lib": ["es2020", "dom"],
+    "removeComments": true
+  },
+  "files": ["./mod.ts"]
+}
