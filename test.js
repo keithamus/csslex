@@ -110,7 +110,7 @@ describe("lexer", () => {
     ]);
     expect(value("-0\n", [types.NUMBER, 0, 2])).to.eql({
       type: "integer",
-      value: -0,
+      value: 0,
     });
   });
 });
