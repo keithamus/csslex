@@ -485,7 +485,7 @@ export const value = (str: string, [token, start, end]: Token) => {
     case NUMBER: {
       const numEnd = consumeNumberSequence(str, start);
       const chunk = str.slice(start, numEnd);
-      const value = parseFloat(chunk);
+      const value = parseFloat(chunk) || 0;
       const type =
         chunk.includes(".") || chunk.includes("E") || chunk.includes("e")
           ? "number"

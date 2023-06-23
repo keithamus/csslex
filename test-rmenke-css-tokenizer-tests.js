@@ -32,10 +32,6 @@ describe("@rmenke/css-tokenizer-tests", () => {
   };
   for (const test in testCorpus) {
     const { css, tokens } = testCorpus[test];
-    // These two tests use `-0` but that is lost in the JSON conversion from the package
-    if (test === "tests/hyphen-minus/0005" || test === "tests/number/0006") {
-      tokens[0].structured.value = -0;
-    }
     it(`${test} ${JSON.stringify(css)}`, () => {
       expect(
         Array.from(lex(css)).map(([type, startIndex, endIndex]) => ({
