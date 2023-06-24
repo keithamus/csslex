@@ -58,24 +58,38 @@ export const types = {
   RIGHT_CURLY,
 } as const;
 
-const hexDigit = (cur: number) =>
-  (cur ^ 0x30) <= 9 ||
-  ((cur | 0x20) >= /*Aa*/ 0x0061 && (cur | 0x20) <= /*Ff*/ 0x0066);
-const identStart = (cur: number) =>
+const hexDigit = (cur?: number) =>
+  (cur! ^ 0x30) <= 9 ||
+  ((cur! | 0x20) >= /*Aa*/ 0x0061 && (cur! | 0x20) <= /*Ff*/ 0x0066);
+const identStart = (cur?: number) =>
+  ((cur! | 0x20) >= /*Aa*/ 0x0061 && (cur! | 0x20) <= /*Zz*/ 0x007a) ||
   cur === /*_*/ 0x005f ||
-  cur >= 0x0080 ||
-  ((cur | 0x20) >= /*Aa*/ 0x0061 && (cur | 0x20) <= /*Zz*/ 0x007a);
-const ident = (cur: number) =>
-  cur === /*-*/ 0x002d || (cur ^ 0x30) <= 9 || identStart(cur);
-const newline = (cur: number) =>
+  cur === /*[ZWNJ]*/ 0x200c ||
+  cur === /*[ZWJ]*/ 0x200d ||
+  cur === /*‿*/ 0x203f ||
+  cur === /*⁀*/ 0x2040 ||
+  cur === /*·*/ 0x00b7 ||
+  (cur! >= /*À*/ 0x00c0 && cur! <= /*Ö*/ 0x00d6) ||
+  (cur! >= /*Ø*/ 0x00d8 && cur! <= /*ö*/ 0x00f6) ||
+  (cur! >= /*ø*/ 0x00f8 && cur! <= /*ͽ*/ 0x037d) ||
+  (cur! >= /*Ϳ*/ 0x037f && cur! <= /*῿*/ 0x1fff) ||
+  (cur! >= /*⁰*/ 0x2070 && cur! <= /*↏*/ 0x218f) ||
+  (cur! >= /*Ⰰ*/ 0x2c00 && cur! <= /*⿯*/ 0x2fef) ||
+  (cur! >= /*、*/ 0x3001 && cur! <= /*퟿*/ 0xd7ff) ||
+  (cur! >= /*豈*/ 0xf900 && cur! <= /*🷏*/ 0xfdcf) ||
+  (cur! >= /*ﷰ*/ 0xfdf0 && cur! <= /*�*/ 0xfffd) ||
+  cur! >= /*𐀀*/ 0x10000;
+const ident = (cur?: number) =>
+  cur === /*-*/ 0x002d || (cur! ^ 0x30) <= 9 || identStart(cur);
+const newline = (cur?: number) =>
   cur === /*\n*/ 0x000a || cur === /*\f*/ 0x000c || cur === /*\r*/ 0x000d;
-const whitespace = (cur: number) =>
+const whitespace = (cur?: number) =>
   newline(cur) || cur === /* */ 0x0020 || cur === /*\t*/ 0x0009;
-const quote = (cur: number) => cur === /*"*/ 0x0022 || cur === /*'*/ 0x0027;
-const nonPrintable = (cur: number) =>
-  (cur >= 0x0000 && cur <= 0x0008) ||
+const quote = (cur?: number) => cur === /*"*/ 0x0022 || cur === /*'*/ 0x0027;
+const nonPrintable = (cur?: number) =>
+  (cur! >= 0x0000 && cur! <= 0x0008) ||
   cur === 0x000b ||
-  (cur >= 0x000e && cur <= 0x001f) ||
+  (cur! >= 0x000e && cur! <= 0x001f) ||
   cur == 0x007f;
 
 const specialDelims = {
@@ -109,53 +123,56 @@ for (let i = 0; i < 128; i += 1) {
     (identStart(i) && IDENTSTART_RANGE) ||
     i;
 }
-const charCodeRange = (str: string, pos: number) => {
-  return ranges[str.charCodeAt(pos)] || IDENTSTART_RANGE;
+const codePointRange = (str: string, pos: number) => {
+  const i = str.codePointAt(pos)!;
+  return ranges[i] || i;
 };
 
 const escapeStartSequence = (str: string, pos: number) =>
-  str.charCodeAt(pos) === /*\*/ 0x005c && !newline(str.charCodeAt(pos + 1));
+  str.codePointAt(pos) === /*\*/ 0x005c && !newline(str.codePointAt(pos + 1));
 
 const numberStartSequence = (str: string, pos: number) => {
-  const firstRange = charCodeRange(str, pos);
-  const secondRange = charCodeRange(str, pos + 1);
+  const firstRange = codePointRange(str, pos);
+  const secondRange = codePointRange(str, pos + 1);
   return (
     firstRange === DIGIT_RANGE ||
     (firstRange === SIGN_RANGE && secondRange === DIGIT_RANGE) ||
     (firstRange === SIGN_RANGE &&
       secondRange === /*.*/ 0x002e &&
-      charCodeRange(str, pos + 2) === DIGIT_RANGE) ||
+      codePointRange(str, pos + 2) === DIGIT_RANGE) ||
     (firstRange === /*.*/ 0x002e && secondRange === DIGIT_RANGE)
   );
 };
 
 const identStartSequence = (str: string, pos: number) => {
-  if (str.charCodeAt(pos) === /*-*/ 0x002d) pos += 1;
-  if (str.charCodeAt(pos) === /*-*/ 0x002d) return true;
-  return (
-    (str.length > pos && charCodeRange(str, pos) === IDENTSTART_RANGE) ||
-    escapeStartSequence(str, pos)
-  );
+  if (str.codePointAt(pos) === /*-*/ 0x002d) pos += 1;
+  const char = str.codePointAt(pos);
+  if (char === /*-*/ 0x002d) return true;
+  return identStart(char) || escapeStartSequence(str, pos);
 };
 
 const consumeRangeSequence = (str: string, pos: number, range: number) => {
-  while (charCodeRange(str, pos) === range) pos += 1;
+  while (codePointRange(str, pos) === range) pos += 1;
   return pos;
 };
 
 const consumeEscapeSequence = (str: string, pos: number): number => {
   pos += 2;
   if (pos > str.length) return str.length;
-  if (hexDigit(str.charCodeAt(pos - 1))) {
-    for (let i = 0; hexDigit(str.charCodeAt(pos)) && i < 5; i += 1, pos += 1) {}
-    if (charCodeRange(str, pos) === WHITESPACE_RANGE) pos += 1;
+  if (hexDigit(str.codePointAt(pos - 1))) {
+    for (
+      let i = 0;
+      hexDigit(str.codePointAt(pos)) && i < 5;
+      i += 1, pos += 1
+    ) {}
+    if (codePointRange(str, pos) === WHITESPACE_RANGE) pos += 1;
   }
   return pos;
 };
 
 const REPLACEMENT = "\ufffd";
 const decodeEscapeSequence = (str: string): string => {
-  if (!hexDigit(str.charCodeAt(0))) {
+  if (!hexDigit(str.codePointAt(0))) {
     return str[0] || REPLACEMENT;
   }
   const codePoint = parseInt(str, 16) || 0;
@@ -172,8 +189,9 @@ const decodeEscapeSequence = (str: string): string => {
 const consumeIdentSequence = (str: string, pos: number): number => {
   const len = str.length;
   while (pos < len) {
-    if (ident(str.charCodeAt(pos))) {
-      pos += 1;
+    const codepoint = str.codePointAt(pos)!;
+    if (ident(codepoint)) {
+      pos += 1 + +(codepoint > 0xffff);
     } else if (escapeStartSequence(str, pos)) {
       pos = consumeEscapeSequence(str, pos);
     } else {
@@ -186,9 +204,10 @@ const consumeIdentSequence = (str: string, pos: number): number => {
 const decodeIdentSequence = (str: string): string => {
   let identValue = "";
   for (let pos = 0; pos < str.length; ) {
-    if (ident(str.charCodeAt(pos))) {
-      identValue += str[pos];
-      pos += 1;
+    const codepoint = str.codePointAt(pos)!;
+    if (ident(codepoint)) {
+      identValue += String.fromCodePoint(codepoint);
+      pos += 1 + +(codepoint > 0xffff);
     } else if (escapeStartSequence(str, pos)) {
       identValue += decodeEscapeSequence(
         str.slice(pos + 1, (pos = consumeEscapeSequence(str, pos)))
@@ -201,18 +220,18 @@ const decodeIdentSequence = (str: string): string => {
 };
 
 const consumeNumberSequence = (str: string, pos: number): number => {
-  let char = charCodeRange(str, pos);
+  let char = codePointRange(str, pos);
   if (char === SIGN_RANGE || char === 0x002e) pos += 1;
   pos = consumeRangeSequence(str, pos, DIGIT_RANGE);
   if (
-    charCodeRange(str, pos) === /*.*/ 0x002e &&
-    charCodeRange(str, pos + 1) === DIGIT_RANGE
+    codePointRange(str, pos) === /*.*/ 0x002e &&
+    codePointRange(str, pos + 1) === DIGIT_RANGE
   ) {
     pos = consumeRangeSequence(str, pos + 2, DIGIT_RANGE);
   }
-  char = charCodeRange(str, pos + 1);
+  char = codePointRange(str, pos + 1);
   if (
-    (str.charCodeAt(pos) | 32) === /*e | E*/ 0x0065 &&
+    (str.codePointAt(pos)! | 32) === /*e | E*/ 0x0065 &&
     (char === SIGN_RANGE || char === DIGIT_RANGE)
   ) {
     pos = consumeRangeSequence(str, pos + 2, DIGIT_RANGE);
@@ -228,8 +247,8 @@ const consumeURLSequence = (
   const len = str.length;
   pos = consumeRangeSequence(str, pos, WHITESPACE_RANGE);
   while (pos < len) {
-    let char = str.charCodeAt(pos);
-    let charRange = charCodeRange(str, pos);
+    let char = str.codePointAt(pos);
+    let charRange = codePointRange(str, pos);
     if (char === 0x029 /*)*/) {
       pos += 1;
       break;
@@ -249,7 +268,7 @@ const consumeURLSequence = (
       }
     } else if (charRange === WHITESPACE_RANGE) {
       pos = consumeRangeSequence(str, pos, WHITESPACE_RANGE);
-      char = str.charCodeAt(pos);
+      char = str.codePointAt(pos);
       if (!char) {
         break;
       } else if (char === 0x029 /*)*/) {
@@ -271,13 +290,13 @@ const consumeIdentLikeToken = (
 ): [typeof IDENT | typeof URL | typeof FUNCTION | typeof BAD_URL, number] => {
   const lastPos = pos;
   pos = consumeIdentSequence(str, pos);
-  if (str.charCodeAt(pos) === /*(*/ 0x0028) {
+  if (str.codePointAt(pos) === /*(*/ 0x0028) {
     const whitePos = consumeRangeSequence(str, pos + 1, WHITESPACE_RANGE);
     pos += 1;
     if (
       whitePos - pos <= 4 &&
       decodeIdentSequence(str.slice(lastPos, pos - 1)).toLowerCase() == "url" &&
-      charCodeRange(str, whitePos) !== QUOTE_RANGE
+      codePointRange(str, whitePos) !== QUOTE_RANGE
     ) {
       return consumeURLSequence(str, pos);
     }
@@ -292,7 +311,7 @@ const consumeNumericToken = (
 ): [typeof NUMBER | typeof DIMENSION | typeof PERCENTAGE, number] => {
   pos = consumeNumberSequence(str, pos);
   let token: typeof NUMBER | typeof DIMENSION | typeof PERCENTAGE = NUMBER;
-  if (str.charCodeAt(pos) === /*%*/ 0x025) {
+  if (str.codePointAt(pos) === /*%*/ 0x025) {
     pos += 1;
     token = PERCENTAGE;
   } else if (identStartSequence(str, pos)) {
@@ -306,11 +325,11 @@ const consumeStringToken = (
   str: string,
   pos: number
 ): [typeof STRING | typeof BAD_STRING, number] => {
-  const quote = str.charCodeAt(pos);
+  const quote = str.codePointAt(pos);
   pos += 1;
   const len = str.length;
   while (pos < len) {
-    switch (str.charCodeAt(pos)) {
+    switch (str.codePointAt(pos)) {
       case quote:
         pos += 1;
         return [STRING, pos];
@@ -321,7 +340,7 @@ const consumeStringToken = (
       case 0x005c /*\*/:
         if (pos == len - 1) {
           pos += 1;
-        } else if (newline(str.charCodeAt(pos + 1))) {
+        } else if (newline(str.codePointAt(pos + 1))) {
           pos += 2;
         } else if (escapeStartSequence(str, pos)) {
           pos = consumeEscapeSequence(str, pos);
@@ -340,7 +359,7 @@ export function* lex(str: string): Generator<Token> {
   let start = 0;
   let pos = 0;
   while (pos < len) {
-    switch (charCodeRange(str, pos)) {
+    switch (codePointRange(str, pos)) {
       case WHITESPACE_RANGE:
         pos = consumeRangeSequence(str, pos, WHITESPACE_RANGE);
         token = WHITESPACE;
@@ -355,14 +374,14 @@ export function* lex(str: string): Generator<Token> {
         if (numberStartSequence(str, pos)) {
           [token, pos] = consumeNumericToken(str, pos);
         } else if (
-          str.charCodeAt(pos) === 0x002d /*-*/ &&
-          str.charCodeAt(pos + 1) === 0x002d /*-*/ &&
-          str.charCodeAt(pos + 2) === 0x003e /*>*/
+          str.codePointAt(pos) === 0x002d /*-*/ &&
+          str.codePointAt(pos + 1) === 0x002d /*-*/ &&
+          str.codePointAt(pos + 2) === 0x003e /*>*/
         ) {
           token = CDC;
           pos += 3;
         } else if (
-          str.charCodeAt(pos) === 0x002d /*-*/ &&
+          str.codePointAt(pos) === 0x002d /*-*/ &&
           identStartSequence(str, pos)
         ) {
           [token, pos] = consumeIdentLikeToken(str, pos);
@@ -384,9 +403,9 @@ export function* lex(str: string): Generator<Token> {
         break;
       case 0x003c /*<*/:
         if (
-          str.charCodeAt(pos + 1) === 0x0021 /*!*/ &&
-          str.charCodeAt(pos + 2) === 0x002d /*-*/ &&
-          str.charCodeAt(pos + 3) === 0x002d /*-*/
+          str.codePointAt(pos + 1) === 0x0021 /*!*/ &&
+          str.codePointAt(pos + 2) === 0x002d /*-*/ &&
+          str.codePointAt(pos + 3) === 0x002d /*-*/
         ) {
           token = CDO;
           pos += 4;
@@ -397,7 +416,7 @@ export function* lex(str: string): Generator<Token> {
         break;
       case 0x0023 /*#*/:
         if (
-          ident(str.charCodeAt(pos + 1)) ||
+          ident(str.codePointAt(pos + 1)) ||
           escapeStartSequence(str, pos + 1)
         ) {
           pos = consumeIdentSequence(str, pos + 1);
@@ -425,7 +444,7 @@ export function* lex(str: string): Generator<Token> {
         }
         break;
       case 0x002f /*/*/:
-        if (str.charCodeAt(pos + 1) === 0x002a /***/) {
+        if (str.codePointAt(pos + 1) === 0x002a /***/) {
           pos = str.indexOf("*/", pos + 2);
           if (pos === -1) pos = len;
           token = COMMENT;
@@ -437,12 +456,16 @@ export function* lex(str: string): Generator<Token> {
         break;
       case SPECIAL_DELIM_RANGE:
         token =
-          specialDelims[str.charCodeAt(pos) as keyof typeof specialDelims];
+          specialDelims[str.codePointAt(pos) as keyof typeof specialDelims];
         pos += 1;
         break;
       default:
-        token = DELIM;
-        pos += 1;
+        if (identStartSequence(str, pos)) {
+          [token, pos] = consumeIdentLikeToken(str, pos);
+        } else {
+          token = DELIM;
+          pos += 1;
+        }
     }
     yield [token!, start, (start = pos)];
   }
@@ -453,16 +476,16 @@ export const value = (str: string, [token, start, end]: Token) => {
     case COMMENT:
       return str.slice(start + 2, end - 2);
     case STRING: {
-      const quote = str.charCodeAt(start);
+      const quote = str.codePointAt(start);
       let value = "";
       for (let pos = start + 1; pos < end; pos += 1) {
-        switch (str.charCodeAt(pos)) {
+        switch (str.codePointAt(pos)) {
           case quote:
             return value;
           case 0x005c /*\*/:
             if (pos + 1 === end && end === str.length) {
               return value;
-            } else if (newline(str.charCodeAt(pos + 1))) {
+            } else if (newline(str.codePointAt(pos + 1))) {
               pos += 1;
               break;
             } else if (escapeStartSequence(str, pos)) {
@@ -519,9 +542,9 @@ export const value = (str: string, [token, start, end]: Token) => {
           pos += 1;
           break;
         } else if (
-          quote(str.charCodeAt(pos)) ||
+          quote(str.codePointAt(pos)) ||
           char === "(" ||
-          nonPrintable(str.charCodeAt(pos))
+          nonPrintable(str.codePointAt(pos))
         ) {
           return null;
         } else if (char === "\\") {
@@ -532,7 +555,7 @@ export const value = (str: string, [token, start, end]: Token) => {
           } else {
             return null;
           }
-        } else if (whitespace(str.charCodeAt(pos))) {
+        } else if (whitespace(str.codePointAt(pos))) {
           pos = consumeRangeSequence(str, pos, WHITESPACE_RANGE);
           char = str[pos];
           if (!char) {

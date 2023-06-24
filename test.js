@@ -113,4 +113,13 @@ describe("lexer", () => {
       value: 0,
     });
   });
+
+  it("tokenizes using codepoints not charcodes", () => {
+    expect(Array.from(lex("§")), "§").to.eql([[types.DELIM, 0, 1]]);
+    expect(value("§", [types.DELIM, 0, 1])).to.eql("§");
+    expect(Array.from(lex("🤲🏽")), "🤲🏽").to.eql([[types.IDENT, 0, 4]]);
+    expect(value("🤲🏽", [types.IDENT, 0, 4])).to.eql("🤲🏽");
+    expect(Array.from(lex("café")), "café").to.eql([[types.IDENT, 0, 5]]);
+    expect(value("café", [types.IDENT, 0, 5])).to.eql("café");
+  });
 });

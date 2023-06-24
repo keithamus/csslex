@@ -96,7 +96,7 @@ comparison of popular alternatives:
 |           Name            | Minified | Gzipped |
 | :-----------------------: | :------- | :------ |
 |   `@csstools/tokenizer`   | 4.1kb    | 1.1kb   |
-|      `csslex` (this)      | 4.47kb   | 1.84kb  |
+|      `csslex` (this)      | 4.7kb    | 1.9kb   |
 | `@csstools/css-tokenizer` | 15.5kb   | 3.4kb   |
 |      `css-tokenize`       | 19.1kb   | 5.7kb   |
 |        `parse-css`        | 16kb     | 4.1kb   |
@@ -109,6 +109,6 @@ the machine I developed the library on:
 
 |          Name           | ops/sec                                |
 | :---------------------: | :------------------------------------- |
-|        css-tree         | 2,981 ops/sec ±0.43% (98 runs sampled) |
-|      csslex (this)      | 2,418 ops/sec ±0.38% (93 runs sampled) |
-| @csstools/css-tokenizer | 1,645 ops/sec ±0.84% (96 runs sampled) |
+|        css-tree         | 3,080 ops/sec ±0.43% (96 runs sampled) |
+|      csslex (this)      | 2,314 ops/sec ±0.45% (93 runs sampled) |
+| @csstools/css-tokenizer | 1,622 ops/sec ±0.76% (96 runs sampled) |
