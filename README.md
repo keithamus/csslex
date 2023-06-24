@@ -7,7 +7,8 @@ It is not _the_ fastest, nor is it _the_ smallest, but it chooses to trade size
 for speed and speed for correctness. Smaller lexers exist but they sacrifice
 speed and correctness. Faster lexers exist but they sacrifice code size, and the
 ability to easily run in the browser. More clearly written lexers exist, but
-usually at the sacrifice of both speed and size.
+usually at the sacrifice of both speed and size. For details on how fast, how
+small, and how correct, see below.
 
 ## What is this good for?
 
@@ -87,6 +88,16 @@ It also uses "snapshot testing" to avoid regressions, it tokenizes the
 [1]: https://github.com/romainmenke/css-tokenizer-tests
 [2]: https://www.npmjs.com/package/postcss-parser-tests/v/8.3.1
 [3]: https://github.com/argyleink/open-props
+
+## Spec Conformance
+
+[@romainmenke][4] maintains a comparison of
+[CSS tokenizers with scores pertaining to each][5]. `csslex` aims to always
+achieve a perfect score here, so if you visit the [scores page][5] an it does
+not have a perfect score, please file an issue!
+
+[4]: (https://github.com/romainmenke)
+[5]: (https://romainmenke.github.io/css-tokenizer-tests/)
 
 ## Size Differentials
 
