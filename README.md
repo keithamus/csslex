@@ -96,8 +96,8 @@ It also uses "snapshot testing" to avoid regressions, it tokenizes the
 achieve a perfect score here, so if you visit the [scores page][5] an it does
 not have a perfect score, please file an issue!
 
-[4]: (https://github.com/romainmenke)
-[5]: (https://romainmenke.github.io/css-tokenizer-tests/)
+[4]: https://github.com/romainmenke
+[5]: https://romainmenke.github.io/css-tokenizer-tests/
 
 ## Size Differentials
 
