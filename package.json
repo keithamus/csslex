@@ -3,6 +3,7 @@
   "version": "0.0.0-development",
   "homepage": "https://github.com/keithamus/csslex",
   "repository": "keithamus/csslex",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./mod.min.js"
