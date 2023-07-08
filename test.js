@@ -109,6 +109,7 @@ describe("lexer", () => {
       [types.WHITESPACE, 2, 3],
     ]);
     expect(value("-0\n", [types.NUMBER, 0, 2])).to.eql({
+      signCharacter: "-",
       type: "integer",
       value: 0,
     });
@@ -122,4 +123,8 @@ describe("lexer", () => {
     expect(Array.from(lex("café")), "café").to.eql([[types.IDENT, 0, 5]]);
     expect(value("café", [types.IDENT, 0, 5])).to.eql("café");
   });
+
+  it("tokenizes unicode escapes", () => {
+    expect(Array.from(lex("abc\\3e")), "abc\\3e").to.eql([[types.IDENT, 0, 6]]);
+  })
 });

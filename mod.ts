@@ -232,7 +232,7 @@ const consumeNumberSequence = (str: string, pos: number): number => {
   char = codePointRange(str, pos + 1);
   if (
     (str.codePointAt(pos)! | 32) === /*e | E*/ 0x0065 &&
-    (char === SIGN_RANGE || char === DIGIT_RANGE)
+    (char === DIGIT_RANGE || (char === SIGN_RANGE && codePointRange(str, pos + 2) === DIGIT_RANGE))
   ) {
     pos = consumeRangeSequence(str, pos + 2, DIGIT_RANGE);
   }
@@ -508,19 +508,19 @@ export const value = (str: string, [token, start, end]: Token) => {
     case NUMBER: {
       const numEnd = consumeNumberSequence(str, start);
       const chunk = str.slice(start, numEnd);
-      const value = parseFloat(chunk) || 0;
-      const type =
-        chunk.includes(".") || chunk.includes("E") || chunk.includes("e")
+      const value: {value: number, type: 'integer'|'number', signCharacter?: string, unit?: string} = {
+        value: parseFloat(chunk) || 0,
+        type: chunk.includes(".") || chunk.includes("E") || chunk.includes("e")
           ? "number"
-          : "integer";
-      if (token === DIMENSION) {
-        return {
-          type,
-          value,
-          unit: decodeIdentSequence(str.slice(numEnd, end)),
-        };
+          : "integer",
       }
-      return { type, value };
+      if (codePointRange(chunk, 0) === SIGN_RANGE) {
+        value.signCharacter = chunk[0];
+      }
+      if (token === DIMENSION) {
+        value.unit= decodeIdentSequence(str.slice(numEnd, end));
+      }
+      return value;
     }
     case HASH: {
       const type = identStartSequence(str, start + 1) ? "id" : "unrestricted";
