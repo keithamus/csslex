@@ -221,7 +221,7 @@ const decodeIdentSequence = (str: string): string => {
 
 const consumeNumberSequence = (str: string, pos: number): number => {
   let char = codePointRange(str, pos);
-  if (char === SIGN_RANGE || char === 0x002e) pos += 1;
+  if (char === SIGN_RANGE) pos += 1;
   pos = consumeRangeSequence(str, pos, DIGIT_RANGE);
   if (
     codePointRange(str, pos) === /*.*/ 0x002e &&

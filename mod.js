@@ -194,7 +194,7 @@ const decodeIdentSequence = (str) => {
 };
 const consumeNumberSequence = (str, pos) => {
     let char = codePointRange(str, pos);
-    if (char === SIGN_RANGE || char === 0x002e)
+    if (char === SIGN_RANGE)
         pos += 1;
     pos = consumeRangeSequence(str, pos, DIGIT_RANGE);
     if (codePointRange(str, pos) === 0x002e &&
