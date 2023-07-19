@@ -2,6 +2,8 @@ import { expect } from "@open-wc/testing";
 import { lex, types, value } from "./mod.ts";
 import { testCorpus } from "@rmenke/css-tokenizer-tests";
 
+const removeType = obj => { delete obj.type; return obj }
+
 describe("@rmenke/css-tokenizer-tests", () => {
   const typesMap = {
     1: "comment",
@@ -43,7 +45,7 @@ describe("@rmenke/css-tokenizer-tests", () => {
             type === types.COMMENT
               ? null
               : type === types.PERCENTAGE
-              ? { value: value(css, [type, startIndex, endIndex]).value }
+              ? removeType(value(css, [type, startIndex, endIndex]))
               : typeof value(css, [type, startIndex, endIndex]) !== "object"
               ? {
                   value: value(css, [type, startIndex, endIndex]),

@@ -32,15 +32,11 @@ export declare const types: {
 };
 export declare function lex(str: string): Generator<Token>;
 export declare const value: (str: string, [token, start, end]: Token) => string | {
-    type: string;
     value: number;
-    unit: string;
-} | {
-    type: string;
-    value: number;
-    unit?: undefined;
+    type: 'integer' | 'number';
+    signCharacter?: string | undefined;
+    unit?: string | undefined;
 } | {
     type: string;
     value: string;
-    unit?: undefined;
 } | null;
