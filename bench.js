@@ -1,6 +1,6 @@
 import Benchmark from "benchmark";
 import { lex } from "./mod.js";
-import { tokenizer as tokenizer2, TokenType } from "@csstools/css-tokenizer";
+import { tokenize as tokenizer2 } from "@csstools/css-tokenizer";
 import { tokenize as tokenizer3 } from "css-tree";
 import { readFileSync } from "node:fs";
 
@@ -10,19 +10,7 @@ function tokenize(name, source) {
   if (name === "csslex") {
     return Array.from(lex(source));
   } else if (name === "@csstools/css-tokenizer") {
-    const result = [];
-    const t = tokenizer2({
-      css: source,
-    });
-    while (true) {
-      const token = t.nextToken();
-      if (token[0] === TokenType.EOF) {
-        break;
-      }
-      result.push(token);
-    }
-
-    return result;
+    return tokenizer2({ css: source });
   } else if (name === "css-tree") {
     const result = [];
     tokenizer3(source, (token, start, end) => {
