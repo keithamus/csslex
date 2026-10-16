@@ -6,7 +6,10 @@
     "license": "MIT",
     "type": "module",
     "exports": {
-        ".": "./mod.min.js"
+        ".": {
+            "types": "./mod.d.ts",
+            "default": "./mod.min.js"
+        }
     },
     "module": "./mod.min.js",
     "types": "mod.d.ts",
